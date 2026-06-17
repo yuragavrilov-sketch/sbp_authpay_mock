@@ -1,0 +1,50 @@
+image:
+  repository: harbor.online.tkbbank.ru/tkbpay/sbp_authpay_mock   # TODO: must equal CI image path ($IMAGE_REGISTRY/$IMAGE_REGISTRY_PROJECT/$CI_PROJECT_NAME); tag injected by CI
+serviceAccount:
+  create: true                   # chart creates a dedicated SA
+  name: sbp-authpay-mock
+imagePullSecrets:
+  enabled: true
+  name: test-adapters-ips        # namespace Harbor pull secret (the dedicated SA has none of its own)
+vault:
+  enabled: false
+replicaCount: 1
+
+# Exposed via the corp nginx ingress for test. NOTE: /api/gcsvc/authpay has no application-level auth —
+# this is a standalone MOCK, acceptable only on the internal corp test network.
+# Restrict before any wider exposure (whitelist-source-range, and front it with auth/mTLS).
+ingress:
+  enabled: true
+  hosts:
+    - sbpauthpaymock.test.payk8s.transcapital.com    # host without a hyphen to avoid an ingress host collision
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"  # restrict to corp CIDRs once known
+
+ports:
+  - containerPort: 8080
+service:
+  name: sbp-authpay-mock         # callers reach http://sbp-authpay-mock:8080/api/gcsvc/authpay
+  port: 8080
+  targetPort: 8080
+
+livenessProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  httpGet:
+    path: /actuator/health
+    port: 8080
+readinessProbe:
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  httpGet:
+    path: /actuator/health
+    port: 8080
+
+# This mock is standalone — it needs NO Vault and NO Config Server.
+# No secrets, no external config-data sources, no VAULT_ENABLED / CONFIG_SERVER_* env vars.
+extraEnvs:
+  - name: SPRING_PROFILES_ACTIVE
+    value: test
+  - name: PAY_ENVIRONMENT
+    value: test
