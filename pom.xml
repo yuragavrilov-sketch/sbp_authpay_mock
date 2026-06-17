@@ -103,4 +103,17 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>esb-group</id>
+            <name>esb-hosted</name>
+            <url>https://repository.transcapital.com/repository/esb-hosted/</url>
+        </repository>
+        <snapshotRepository>
+            <id>esb-group</id>
+            <name>esb-hosted</name>
+            <url>https://repository.transcapital.com/repository/esb-snapshot-hosted/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
